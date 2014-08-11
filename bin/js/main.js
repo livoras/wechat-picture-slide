@@ -1,12 +1,12 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 module.exports={
-	"images": [
-		{"url": "img/foo4.jpg", "text": "这是一个美女", "name": "Jimmy"},
-		{"url": "img/foo1.png", "text": "这是一个美女", "name": "Lucy"},
-		{"url": "img/foo2.jpg", "text": "这是一个美女", "name": "Tony"},
-		{"url": "img/foo3.jpg", "text": "这是一个美女", "name": "Honey"},
-		{"url": "img/foo5.jpg", "text": "这是一个美女", "name": "Jerry"}
-	]
+    "images": [
+        {"url": "img/foo4.jpg", "text": "这是一个美女", "name": "Jimmy"},
+        {"url": "img/foo1.png", "text": "这是一个美女", "name": "Lucy"},
+        {"url": "img/foo2.jpg", "text": "这是一个美女", "name": "Tony"},
+        {"url": "img/foo3.jpg", "text": "这是一个美女", "name": "Honey"},
+        {"url": "img/foo5.jpg", "text": "这是一个美女", "name": "Jerry"}
+    ]
 }
 },{}],2:[function(require,module,exports){
 var $, $cover, $dashboard, $left, $right, $wall, THUMB_HEIGHT, THUMB_WIDTH, appenStyle, currentIndex, data, degs, headIter, images, imgDoms, init, initDashboard, initImages, initSlideCircle, initSwitches, next, perDeg, piToDeg, prev, radius, tailIter, util, visibleImgsCount;
@@ -129,7 +129,7 @@ piToDeg = function(pi) {
 appenStyle = function(radius) {
   var style;
   style = document.createElement("style");
-  style.innerHTML = "div.dashboard div.img,\ndiv.dashboard {\n	transform-origin: 50% " + radius + "px;\n	-webkit-transform-origin: 50% " + radius + "px;\n}";
+  style.innerHTML = "div.dashboard div.img,\ndiv.dashboard {\n    transform-origin: 50% " + radius + "px;\n    -webkit-transform-origin: 50% " + radius + "px;\n}";
   return document.body.appendChild(style);
 };
 
