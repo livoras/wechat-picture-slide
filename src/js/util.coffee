@@ -7,6 +7,26 @@ $ = (selector)->
         return doms[0]
     doms
 
+removeClass = ($dom, className)->
+    if not $dom then return
+    klass = $dom.className
+    $dom.className = klass.replace ///\s#{className}\s?///, " "
+
+addClass = ($dom, className)->
+    if not $dom then return
+    classes = $dom.className.split " "
+    if className not in classes
+        if $dom.className.match /\s$/
+            $dom.className += "#{className}"
+        else 
+            $dom.className += " #{className}"
+
+setBackground = ($dom, url)->
+    $dom.style.backgroundImage = "url(#{url})"
+
+setRotate = ($dom, deg)->
+    $dom.style.webkitTransform = "rotateZ(#{deg + 'deg'})"
+
 class Iterator
     constructor: (list, isLoop)->
         @list = list
@@ -21,7 +41,7 @@ class Iterator
             @index++
         @list[@index]
     prev: ->
-        if @index - 1 is 0
+        if @index - 1 <= 0
             if @isLoop then @index = @list.length - 1 else return
         else
             @index--
@@ -29,4 +49,8 @@ class Iterator
     current: ->
         @list[@index]
     
-module.exports = {$, Iterator}
+module.exports = {
+    $, Iterator, 
+    addClass, removeClass,
+    setBackground, setRotate
+}

@@ -2,25 +2,27 @@ data = require "./data.json"
 util = require "./util.coffee"
 
 images = data.images 
-currentIndex = images.length - 1
 visibleImgsCount = 0
 degs = null
 perDeg = 0
 radius = 0
-$ = util.$
 headIter = null
 tailIter = null
 imgDoms = []
+isSliding = no
 
 $cover = null
 $wall = null
 $left = null
 $right = null
 $dashboard = null
+$currentActive = null
 
 THUMB_HEIGHT = 100
 THUMB_WIDTH = 65
+SLIDE_DURATION = 530
 
+{$, Iterator, addClass, removeClass, setBackground, setRotate} = util
 
 init = ->
     $wall = $ "div.wall"
@@ -28,9 +30,14 @@ init = ->
     $left = $ "div.left"
     $right = $ "div.right"
     $dashboard = $ "div.dashboard"
-    next()
+    initData()
     initSwitches()
     initDashboard()
+    next()
+
+initData = ->
+    images.forEach (img, i)->
+        img.index = i
 
 initSwitches = ->   
     $left.on "touchstart", -> prev()
@@ -70,18 +77,39 @@ initImages = ->
     for deg, i in degs
         img = imgIter.current()
         imgIter.next()
+
         $div = document.createElement "div"
-        $div.className = "img"
-        $div.style.backgroundImage = "url(#{img.url})"
+        $div.className = "img transition"
         $div.style.webkitTransform = "rotateZ(#{deg + 'deg'})"
+        $div.imgIndex = img.index
+
+        setBackground $div, img.url
         imgDoms.push $div
         $dashboard.appendChild $div
-    console.log imgDoms
+
     tailIter = imgIter
     tailIter.prev()
 
 initSlideCircle = ->
-    deg = 0
+    currentPageX = originPageX = 0
+    THRESHOLD = 50
+
+    $dashboard.on "touchstart", (event)->
+        event.preventDefault()
+        touch = event.touches[0];
+        currentPageX = originPageX = touch.pageX
+
+    $dashboard.on "touchmove", (event)->
+        event.preventDefault()
+        touch = event.touches[0];
+        currentPageX = touch.pageX
+
+    $dashboard.on "touchend", (event)->
+        event.preventDefault()
+        if currentPageX > originPageX and currentPageX - originPageX > THRESHOLD
+            prev()
+        else if originPageX > currentPageX and originPageX - currentPageX > THRESHOLD
+            next()
 
 piToDeg = (pi)->        
     pi / Math.PI * 180
@@ -98,15 +126,64 @@ appenStyle = (radius)->
     document.body.appendChild style
 
 next = ->
-    currentIndex++
-    if currentIndex is images.length then currentIndex = 0
-    $wall.style.backgroundImage = "url(#{images[currentIndex].url})"
-    $cover.style.backgroundImage = "url(#{images[currentIndex].url})"
+    if isSliding then return
+    isSliding = yes
+    setTimeout ->
+        isSliding = no
+    , SLIDE_DURATION
+    imgData = slideForward()
+    $wall.style.backgroundImage = "url(#{imgData.url})"
+    $cover.style.backgroundImage = "url(#{imgData.url})"
 
 prev = ->
-    currentIndex--
-    if currentIndex is -1 then currentIndex = images.length - 1
-    $wall.style.backgroundImage = "url(#{images[currentIndex].url})"
-    $cover.style.backgroundImage = "url(#{images[currentIndex].url})"
+    if isSliding then return
+    isSliding = yes
+    setTimeout ->
+        isSliding = no
+    , SLIDE_DURATION
+    imgData = slideBackward()
+    $wall.style.backgroundImage = "url(#{imgData.url})"
+    $cover.style.backgroundImage = "url(#{imgData.url})"
+
+slideForward = ->    
+    deactive $currentActive
+    $img = imgDoms.shift()
+    imgData = tailIter.next()
+    imgDoms.push $img
+    processSlideDom $img, imgData
+    $currentActive = imgDoms[(visibleImgsCount - 1) / 2]
+    active $currentActive
+    nextImgIndex = $currentActive.imgIndex
+    images[nextImgIndex]
+    
+slideBackward = ->    
+    deactive $currentActive
+    $img = imgDoms.pop()
+    imgData = headIter.prev()
+    imgDoms.unshift $img
+    processSlideDom $img, imgData
+    $currentActive = imgDoms[(visibleImgsCount - 1) / 2]
+    active $currentActive
+    nextImgIndex = $currentActive.imgIndex
+    images[nextImgIndex]
+
+active = ($img)->
+    addClass $img, "active"
+
+deactive = ($img)->
+    removeClass $img, "active"
+
+processSlideDom = ($img, imgData)->
+    removeClass $img, "transition"
+    setBackground $img, imgData.url
+    $img.imgIndex = imgData.index
+    resetRotate()
+    setTimeout ->
+        addClass $img, "transition"
+    , SLIDE_DURATION
+
+resetRotate = ->
+    for $img, i in imgDoms
+        setRotate $img, degs[i]
 
 init()

@@ -9,15 +9,13 @@ module.exports={
     ]
 }
 },{}],2:[function(require,module,exports){
-var $, $cover, $dashboard, $left, $right, $wall, THUMB_HEIGHT, THUMB_WIDTH, appenStyle, currentIndex, data, degs, headIter, images, imgDoms, init, initDashboard, initImages, initSlideCircle, initSwitches, next, perDeg, piToDeg, prev, radius, tailIter, util, visibleImgsCount;
+var $, $cover, $currentActive, $dashboard, $left, $right, $wall, Iterator, SLIDE_DURATION, THUMB_HEIGHT, THUMB_WIDTH, active, addClass, appenStyle, data, deactive, degs, headIter, images, imgDoms, init, initDashboard, initData, initImages, initSlideCircle, initSwitches, isSliding, next, perDeg, piToDeg, prev, processSlideDom, radius, removeClass, resetRotate, setBackground, setRotate, slideBackward, slideForward, tailIter, util, visibleImgsCount;
 
 data = require("./data.json");
 
 util = require("./util.coffee");
 
 images = data.images;
-
-currentIndex = images.length - 1;
 
 visibleImgsCount = 0;
 
@@ -27,13 +25,13 @@ perDeg = 0;
 
 radius = 0;
 
-$ = util.$;
-
 headIter = null;
 
 tailIter = null;
 
 imgDoms = [];
+
+isSliding = false;
 
 $cover = null;
 
@@ -45,9 +43,15 @@ $right = null;
 
 $dashboard = null;
 
+$currentActive = null;
+
 THUMB_HEIGHT = 100;
 
 THUMB_WIDTH = 65;
+
+SLIDE_DURATION = 530;
+
+$ = util.$, Iterator = util.Iterator, addClass = util.addClass, removeClass = util.removeClass, setBackground = util.setBackground, setRotate = util.setRotate;
 
 init = function() {
   $wall = $("div.wall");
@@ -55,9 +59,16 @@ init = function() {
   $left = $("div.left");
   $right = $("div.right");
   $dashboard = $("div.dashboard");
-  next();
+  initData();
   initSwitches();
-  return initDashboard();
+  initDashboard();
+  return next();
+};
+
+initData = function() {
+  return images.forEach(function(img, i) {
+    return img.index = i;
+  });
 };
 
 initSwitches = function() {
@@ -106,20 +117,41 @@ initImages = function() {
     img = imgIter.current();
     imgIter.next();
     $div = document.createElement("div");
-    $div.className = "img";
-    $div.style.backgroundImage = "url(" + img.url + ")";
+    $div.className = "img transition";
     $div.style.webkitTransform = "rotateZ(" + (deg + 'deg') + ")";
+    $div.imgIndex = img.index;
+    setBackground($div, img.url);
     imgDoms.push($div);
     $dashboard.appendChild($div);
   }
-  console.log(imgDoms);
   tailIter = imgIter;
   return tailIter.prev();
 };
 
 initSlideCircle = function() {
-  var deg;
-  return deg = 0;
+  var THRESHOLD, currentPageX, originPageX;
+  currentPageX = originPageX = 0;
+  THRESHOLD = 50;
+  $dashboard.on("touchstart", function(event) {
+    var touch;
+    event.preventDefault();
+    touch = event.touches[0];
+    return currentPageX = originPageX = touch.pageX;
+  });
+  $dashboard.on("touchmove", function(event) {
+    var touch;
+    event.preventDefault();
+    touch = event.touches[0];
+    return currentPageX = touch.pageX;
+  });
+  return $dashboard.on("touchend", function(event) {
+    event.preventDefault();
+    if (currentPageX > originPageX && currentPageX - originPageX > THRESHOLD) {
+      return prev();
+    } else if (originPageX > currentPageX && originPageX - currentPageX > THRESHOLD) {
+      return next();
+    }
+  });
 };
 
 piToDeg = function(pi) {
@@ -134,21 +166,85 @@ appenStyle = function(radius) {
 };
 
 next = function() {
-  currentIndex++;
-  if (currentIndex === images.length) {
-    currentIndex = 0;
+  var imgData;
+  if (isSliding) {
+    return;
   }
-  $wall.style.backgroundImage = "url(" + images[currentIndex].url + ")";
-  return $cover.style.backgroundImage = "url(" + images[currentIndex].url + ")";
+  isSliding = true;
+  setTimeout(function() {
+    return isSliding = false;
+  }, SLIDE_DURATION);
+  imgData = slideForward();
+  $wall.style.backgroundImage = "url(" + imgData.url + ")";
+  return $cover.style.backgroundImage = "url(" + imgData.url + ")";
 };
 
 prev = function() {
-  currentIndex--;
-  if (currentIndex === -1) {
-    currentIndex = images.length - 1;
+  var imgData;
+  if (isSliding) {
+    return;
   }
-  $wall.style.backgroundImage = "url(" + images[currentIndex].url + ")";
-  return $cover.style.backgroundImage = "url(" + images[currentIndex].url + ")";
+  isSliding = true;
+  setTimeout(function() {
+    return isSliding = false;
+  }, SLIDE_DURATION);
+  imgData = slideBackward();
+  $wall.style.backgroundImage = "url(" + imgData.url + ")";
+  return $cover.style.backgroundImage = "url(" + imgData.url + ")";
+};
+
+slideForward = function() {
+  var $img, imgData, nextImgIndex;
+  deactive($currentActive);
+  $img = imgDoms.shift();
+  imgData = tailIter.next();
+  imgDoms.push($img);
+  processSlideDom($img, imgData);
+  $currentActive = imgDoms[(visibleImgsCount - 1) / 2];
+  active($currentActive);
+  nextImgIndex = $currentActive.imgIndex;
+  return images[nextImgIndex];
+};
+
+slideBackward = function() {
+  var $img, imgData, nextImgIndex;
+  deactive($currentActive);
+  $img = imgDoms.pop();
+  imgData = headIter.prev();
+  imgDoms.unshift($img);
+  processSlideDom($img, imgData);
+  $currentActive = imgDoms[(visibleImgsCount - 1) / 2];
+  active($currentActive);
+  nextImgIndex = $currentActive.imgIndex;
+  return images[nextImgIndex];
+};
+
+active = function($img) {
+  return addClass($img, "active");
+};
+
+deactive = function($img) {
+  return removeClass($img, "active");
+};
+
+processSlideDom = function($img, imgData) {
+  removeClass($img, "transition");
+  setBackground($img, imgData.url);
+  $img.imgIndex = imgData.index;
+  resetRotate();
+  return setTimeout(function() {
+    return addClass($img, "transition");
+  }, SLIDE_DURATION);
+};
+
+resetRotate = function() {
+  var $img, i, _i, _len, _results;
+  _results = [];
+  for (i = _i = 0, _len = imgDoms.length; _i < _len; i = ++_i) {
+    $img = imgDoms[i];
+    _results.push(setRotate($img, degs[i]));
+  }
+  return _results;
 };
 
 init();
@@ -156,7 +252,8 @@ init();
 
 
 },{"./data.json":1,"./util.coffee":3}],3:[function(require,module,exports){
-var $, Iterator;
+var $, Iterator, addClass, removeClass, setBackground, setRotate,
+  __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 $ = function(selector) {
   var dom, doms;
@@ -169,6 +266,38 @@ $ = function(selector) {
     return doms[0];
   }
   return doms;
+};
+
+removeClass = function($dom, className) {
+  var klass;
+  if (!$dom) {
+    return;
+  }
+  klass = $dom.className;
+  return $dom.className = klass.replace(RegExp("\\s" + className + "\\s?"), " ");
+};
+
+addClass = function($dom, className) {
+  var classes;
+  if (!$dom) {
+    return;
+  }
+  classes = $dom.className.split(" ");
+  if (__indexOf.call(classes, className) < 0) {
+    if ($dom.className.match(/\s$/)) {
+      return $dom.className += "" + className;
+    } else {
+      return $dom.className += " " + className;
+    }
+  }
+};
+
+setBackground = function($dom, url) {
+  return $dom.style.backgroundImage = "url(" + url + ")";
+};
+
+setRotate = function($dom, deg) {
+  return $dom.style.webkitTransform = "rotateZ(" + (deg + 'deg') + ")";
 };
 
 Iterator = (function() {
@@ -196,7 +325,7 @@ Iterator = (function() {
   };
 
   Iterator.prototype.prev = function() {
-    if (this.index - 1 === 0) {
+    if (this.index - 1 <= 0) {
       if (this.isLoop) {
         this.index = this.list.length - 1;
       } else {
@@ -218,7 +347,11 @@ Iterator = (function() {
 
 module.exports = {
   $: $,
-  Iterator: Iterator
+  Iterator: Iterator,
+  addClass: addClass,
+  removeClass: removeClass,
+  setBackground: setBackground,
+  setRotate: setRotate
 };
 
 

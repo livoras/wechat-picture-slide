@@ -79,7 +79,6 @@ div.dashboard {
     bottom: 0px;
     /*background: rgba(0, 0, 0, 0.5);*/
     div.img {
-        .transition();
         position: absolute;
         margin: auto;
         left: 0;
@@ -94,5 +93,18 @@ div.dashboard {
 
         transform-origin: 50% @origin-y;
         -webkit-transform-origin: 50% @origin-y;
+        &.transition {
+            .transition();
+        }
+
+        &.active:before {
+            .transition();
+            content: " ";
+            display: block;
+            height: 100%;
+            width: 100%;
+            opacity: 0.6;
+            background-color: #000;
+        }
     }
 }
