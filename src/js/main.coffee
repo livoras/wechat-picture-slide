@@ -148,6 +148,7 @@ prev = ->
 slideForward = ->    
     deactive $currentActive
     $img = imgDoms.shift()
+    headIter.next()
     imgData = tailIter.next()
     imgDoms.push $img
     processSlideDom $img, imgData
@@ -159,6 +160,7 @@ slideForward = ->
 slideBackward = ->    
     deactive $currentActive
     $img = imgDoms.pop()
+    tailIter.prev()
     imgData = headIter.prev()
     imgDoms.unshift $img
     processSlideDom $img, imgData
