@@ -90,10 +90,23 @@ cover.init = (cvs)->
     x = slideData.coverX
     y = slideData.coverY
     initText()
+    initEvent()
 
 initText = ->
     $textWrapper.style.width = width + 'px'
     $textWrapper.style.top = y + height - gradientHeight + 5 + 'px'
+
+initEvent = ->
+    window.addEventListener "touchstart", (event)->
+        event.preventDefault()
+        if not imgData then return
+        touch = event.touches[0];
+
+        px = touch.pageX
+        py = touch.pageY
+
+        if px > x and px < x + width and py > y and py < y + height
+            window.location.href = imgData.target
 
 updateText = ->
     $title.innerHTML = imgData.title

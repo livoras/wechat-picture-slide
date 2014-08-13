@@ -820,7 +820,7 @@ module.exports = function(img) {
 
 
 },{"../../lib/blur":1}],6:[function(require,module,exports){
-var $, $text, $textWrapper, $title, PACE, canvas, clip, cover, ctx, currentImg, draw, drawCurrentImage, drawShadow, drawText, gradientHeight, height, imgData, initText, isChange, nextImg, opacity, renderCurrentImage, renderNextImage, slideData, updateText, util, width, x, y;
+var $, $text, $textWrapper, $title, PACE, canvas, clip, cover, ctx, currentImg, draw, drawCurrentImage, drawShadow, drawText, gradientHeight, height, imgData, initEvent, initText, isChange, nextImg, opacity, renderCurrentImage, renderNextImage, slideData, updateText, util, width, x, y;
 
 cover = {};
 
@@ -945,12 +945,29 @@ cover.init = function(cvs) {
   height = slideData.coverHeight;
   x = slideData.coverX;
   y = slideData.coverY;
-  return initText();
+  initText();
+  return initEvent();
 };
 
 initText = function() {
   $textWrapper.style.width = width + 'px';
   return $textWrapper.style.top = y + height - gradientHeight + 5 + 'px';
+};
+
+initEvent = function() {
+  return window.addEventListener("touchstart", function(event) {
+    var px, py, touch;
+    event.preventDefault();
+    if (!imgData) {
+      return;
+    }
+    touch = event.touches[0];
+    px = touch.pageX;
+    py = touch.pageY;
+    if (px > x && px < x + width && py > y && py < y + height) {
+      return window.location.href = imgData.target;
+    }
+  });
 };
 
 updateText = function() {
