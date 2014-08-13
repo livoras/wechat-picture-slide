@@ -31,11 +31,26 @@ window.addEventListener("load", function() {
 })
 
 },{}],2:[function(require,module,exports){
-var $, BUTTON_SIZE, Button, GAP, RADIUS, buttons, canvas, canvasHeight, canvasWidth, ctx, init, initClear, initEvents, moveBack, moveFront, resizeCanvas, test, util, world;
+module.exports={
+    "images": [
+        {"url": "img/button1.png", "target": "http://baidu.com/1"},
+        {"url": "img/button2.png", "target": "http://baidu.com/2"},
+        {"url": "img/button3.png", "target": "http://baidu.com/3"},
+        {"url": "img/button4.png", "target": "http://baidu.com/4"},
+        {"url": "img/button5.png", "target": "http://baidu.com/5"},
+        {"url": "img/button6.png", "target": "http://baidu.com/6"}
+    ]
+}
+},{}],3:[function(require,module,exports){
+var $, BUTTON_SIZE, Button, GAP, RADIUS, buttons, canvas, canvasHeight, canvasWidth, ctx, data, images, init, initButtons, initClear, initEvents, moveBack, moveFront, pageX, pageY, resizeCanvas, util, world;
 
 util = require("./util.coffee");
 
 world = require("./world.coffee");
+
+data = require("./data.json");
+
+images = data.images;
 
 $ = util.$;
 
@@ -55,12 +70,16 @@ RADIUS = 0.5 * canvasWidth - (0.5 * BUTTON_SIZE + GAP);
 
 buttons = [];
 
+pageX = 0;
+
+pageY = 0;
+
 init = function() {
   resizeCanvas();
   initClear();
   initEvents();
-  world.start();
-  return test();
+  initButtons();
+  return world.start();
 };
 
 resizeCanvas = function() {
@@ -83,9 +102,6 @@ initClear = function() {
 };
 
 initEvents = function() {
-  var pageX, pageY;
-  pageX = 0;
-  pageY = 0;
   canvas.addEventListener("touchstart", function(event) {
     var touch;
     event.preventDefault();
@@ -140,17 +156,16 @@ moveBack = function() {
   return _results;
 };
 
-test = function() {
-  var button, currentDeg, img, imgPath, imgsPath, perDeg, _i, _len, _results;
-  imgsPath = ["img/button1.png", "img/button2.png", "img/button3.png", "img/button4.png", "img/button5.png", "img/button6.png"];
-  perDeg = 360 / imgsPath.length;
+initButtons = function() {
+  var button, currentDeg, img, imgData, perDeg, _i, _len, _results;
+  perDeg = 360 / images.length;
   currentDeg = 0;
   _results = [];
-  for (_i = 0, _len = imgsPath.length; _i < _len; _i++) {
-    imgPath = imgsPath[_i];
+  for (_i = 0, _len = images.length; _i < _len; _i++) {
+    imgData = images[_i];
     img = new Image;
-    img.src = imgPath;
-    button = new Button(currentDeg, img);
+    img.src = imgData.url;
+    button = new Button(currentDeg, img, imgData.target);
     currentDeg += perDeg;
     buttons.push(button);
     _results.push(world.add(button));
@@ -159,13 +174,15 @@ test = function() {
 };
 
 Button = (function() {
-  function Button(deg, img) {
+  function Button(deg, img, target) {
     this.deg = deg;
     this.img = img;
+    this.target = target;
     this.max = 14;
     this.v = 0;
     this.pace = 0.7;
     this.force = 0.1;
+    this.initEvents();
   }
 
   Button.prototype.move = function() {
@@ -210,6 +227,22 @@ Button = (function() {
     }
   };
 
+  Button.prototype.initEvents = function() {
+    return canvas.addEventListener("touchend", (function(_this) {
+      return function(event) {
+        var originX, originY, piDeg, x, y;
+        piDeg = _this.deg / 180 * Math.PI;
+        originX = (Math.sin(piDeg)) * RADIUS + 0.5 * canvasWidth;
+        originY = -(Math.cos(piDeg)) * RADIUS + 0.5 * canvasHeight;
+        x = originX - 0.5 * BUTTON_SIZE;
+        y = originY - 0.5 * BUTTON_SIZE;
+        if ((x < pageX && pageX < x + BUTTON_SIZE) && (y < pageY && pageY < y + BUTTON_SIZE)) {
+          return window.location.href = _this.target;
+        }
+      };
+    })(this));
+  };
+
   return Button;
 
 })();
@@ -218,7 +251,7 @@ init();
 
 
 
-},{"./util.coffee":3,"./world.coffee":4}],3:[function(require,module,exports){
+},{"./data.json":2,"./util.coffee":4,"./world.coffee":5}],4:[function(require,module,exports){
 var $;
 
 $ = function(selector) {
@@ -240,7 +273,7 @@ module.exports = {
 
 
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var spirts, timer, world;
 
 require("../../lib/anim");
@@ -272,4 +305,4 @@ module.exports = world;
 
 
 
-},{"../../lib/anim":1}]},{},[2]);
+},{"../../lib/anim":1}]},{},[3]);

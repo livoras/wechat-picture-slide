@@ -1,5 +1,7 @@
 util = require "./util.coffee"
 world = require "./world.coffee"
+data = require "./data.json"
+images = data.images
 
 $ = util.$
 
@@ -13,12 +15,16 @@ GAP = 8
 RADIUS = 0.5 * canvasWidth - (0.5 * BUTTON_SIZE + GAP)
 buttons = []
 
+pageX = 0
+pageY = 0
+
+
 init = ->
     resizeCanvas()
     initClear()
     initEvents()
+    initButtons()
     world.start()
-    test()
 
 resizeCanvas = ->
     canvas.width = canvasWidth
@@ -35,9 +41,6 @@ initClear = ->
             ctx.restore()
 
 initEvents = ->
-    pageX = 0
-    pageY = 0
-
     canvas.addEventListener "touchstart", (event)->
         event.preventDefault()
         touch = event.touches[0]
@@ -71,32 +74,24 @@ moveBack = ->
     for button in buttons
         button.back()
 
-test = ->
-    imgsPath = [
-        "img/button1.png"
-        "img/button2.png"
-        "img/button3.png"
-        "img/button4.png"
-        "img/button5.png"
-        "img/button6.png"
-    ]
-    perDeg = 360 / imgsPath.length
+initButtons = ->
+    perDeg = 360 / images.length
     currentDeg = 0
-    for imgPath in imgsPath
+    for imgData in images
         img = new Image
-        img.src = imgPath
-        button = new Button currentDeg, img
+        img.src = imgData.url
+        button = new Button currentDeg, img, imgData.target
         currentDeg += perDeg
         buttons.push button
         world.add button
 
 class Button
-    constructor: (@deg, @img)->
+    constructor: (@deg, @img, @target)->
         @max = 14
         @v = 0
-
         @pace = 0.7
         @force = 0.1
+        @initEvents()
 
     move: -> 
         @updateDeg()
@@ -128,5 +123,14 @@ class Button
             else
                 @v += @force
 
+    initEvents: ->
+        canvas.addEventListener "touchend", (event)=>
+            piDeg = @deg / 180 * Math.PI
+            originX = (Math.sin piDeg) * RADIUS + 0.5 * canvasWidth
+            originY = -(Math.cos piDeg) * RADIUS + 0.5 * canvasHeight
+            x = originX - 0.5 * BUTTON_SIZE
+            y = originY - 0.5 * BUTTON_SIZE
+            if x < pageX < x + BUTTON_SIZE and y < pageY < y + BUTTON_SIZE
+                window.location.href = @target
 
 init()
