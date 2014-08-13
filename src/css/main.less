@@ -1,4 +1,4 @@
-// @import "./classes.less";
+@import "./classes.less";
 
 // @slide-duration: 0.5s;
 // @dashboard-height: 180px;
@@ -6,11 +6,31 @@
 * {
     margin: 0;
     padding: 0;
+    font-family: "微软雅黑";
 }
 canvas {
     position: fixed;
     top: 0;
     left: 0;
+}
+
+div.text-wrapper {
+    position: absolute;
+    margin: auto;
+    width: 40px;
+    left: 0;
+    right: 0;
+    @padding: 10px;
+    div.title {
+        color: #f3f3f3; 
+        padding: 0 10px;
+        padding-bottom: 5px;
+    }
+    div.text {
+        color: #ccc;
+        font-size: 12px;
+        padding: 0 10px;
+    }
 }
 
 // div.wall {

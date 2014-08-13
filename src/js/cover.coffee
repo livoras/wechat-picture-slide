@@ -9,14 +9,22 @@ opacity = 0
 isChange = no
 util = require "./util.coffee"
 clip = util.clip
+$ = util.$
+imgData = null
 
 x = y = width = height = 0
+gradientHeight = 90
 
+$textWrapper = $ "div.text-wrapper"
+$title = $ "div.title"
+$text = $ "div.text"
 
 cover.change = (img)->
-    nextImg = img
+    imgData = img
+    nextImg = img.data
     opacity =   0
     isChange = yes
+    updateText()
 
 cover.move = ->
     if isChange
@@ -29,6 +37,8 @@ cover.move = ->
             currentImg = nextImg
     else
         drawCurrentImage()
+
+    drawText()
 
 renderNextImage = ->
     if not currentImg then return
@@ -59,6 +69,19 @@ draw = (img)->
     {sx, sy, sw, sh} = clip img, width, height
     ctx.drawImage img, sx, sy, sw, sh, 0, 0, width, height
 
+drawText = ->
+    if not imgData then return
+    drawShadow()
+
+drawShadow = ->    
+    ctx.save()
+    gradient = ctx.createLinearGradient canvas.width / 2,  y + height, canvas.width / 2, y + height - gradientHeight
+    gradient.addColorStop 0, "rgba(0, 0, 0, 0.9)"
+    gradient.addColorStop 1, "rgba(0, 0, 0, 0)"
+    ctx.fillStyle = gradient
+    ctx.fillRect x, y + height - gradientHeight, width, gradientHeight
+    ctx.restore()
+
 cover.init = (cvs)->
     canvas = cvs
     ctx = canvas.getContext "2d"
@@ -66,5 +89,14 @@ cover.init = (cvs)->
     height = slideData.coverHeight
     x = slideData.coverX
     y = slideData.coverY
+    initText()
+
+initText = ->
+    $textWrapper.style.width = width + 'px'
+    $textWrapper.style.top = y + height - gradientHeight + 5 + 'px'
+
+updateText = ->
+    $title.innerHTML = imgData.title
+    $text.innerHTML = imgData.text
 
 module.exports = cover   

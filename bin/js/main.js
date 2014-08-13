@@ -820,7 +820,7 @@ module.exports = function(img) {
 
 
 },{"../../lib/blur":1}],6:[function(require,module,exports){
-var PACE, canvas, clip, cover, ctx, currentImg, draw, drawCurrentImage, height, isChange, nextImg, opacity, renderCurrentImage, renderNextImage, slideData, util, width, x, y;
+var $, $text, $textWrapper, $title, PACE, canvas, clip, cover, ctx, currentImg, draw, drawCurrentImage, drawShadow, drawText, gradientHeight, height, imgData, initText, isChange, nextImg, opacity, renderCurrentImage, renderNextImage, slideData, updateText, util, width, x, y;
 
 cover = {};
 
@@ -842,12 +842,26 @@ util = require("./util.coffee");
 
 clip = util.clip;
 
+$ = util.$;
+
+imgData = null;
+
 x = y = width = height = 0;
 
+gradientHeight = 90;
+
+$textWrapper = $("div.text-wrapper");
+
+$title = $("div.title");
+
+$text = $("div.text");
+
 cover.change = function(img) {
-  nextImg = img;
+  imgData = img;
+  nextImg = img.data;
   opacity = 0;
-  return isChange = true;
+  isChange = true;
+  return updateText();
 };
 
 cover.move = function() {
@@ -858,11 +872,12 @@ cover.move = function() {
     if (opacity >= 1) {
       isChange = false;
       opacity = 0;
-      return currentImg = nextImg;
+      currentImg = nextImg;
     }
   } else {
-    return drawCurrentImage();
+    drawCurrentImage();
   }
+  return drawText();
 };
 
 renderNextImage = function() {
@@ -905,13 +920,42 @@ draw = function(img) {
   return ctx.drawImage(img, sx, sy, sw, sh, 0, 0, width, height);
 };
 
+drawText = function() {
+  if (!imgData) {
+    return;
+  }
+  return drawShadow();
+};
+
+drawShadow = function() {
+  var gradient;
+  ctx.save();
+  gradient = ctx.createLinearGradient(canvas.width / 2, y + height, canvas.width / 2, y + height - gradientHeight);
+  gradient.addColorStop(0, "rgba(0, 0, 0, 0.9)");
+  gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(x, y + height - gradientHeight, width, gradientHeight);
+  return ctx.restore();
+};
+
 cover.init = function(cvs) {
   canvas = cvs;
   ctx = canvas.getContext("2d");
   width = slideData.coverWidth;
   height = slideData.coverHeight;
   x = slideData.coverX;
-  return y = slideData.coverY;
+  y = slideData.coverY;
+  return initText();
+};
+
+initText = function() {
+  $textWrapper.style.width = width + 'px';
+  return $textWrapper.style.top = y + height - gradientHeight + 5 + 'px';
+};
+
+updateText = function() {
+  $title.innerHTML = imgData.title;
+  return $text.innerHTML = imgData.text;
 };
 
 module.exports = cover;
@@ -1105,11 +1149,11 @@ module.exports = dashboard;
 },{"./data.json":8,"./slide-data.coffee":10,"./thumb.coffee":11,"./util.coffee":12}],8:[function(require,module,exports){
 module.exports={
     "images": [
-        {"url": "img/foo4.jpg", "text": "这是一个美女", "name": "Jimmy"},
-        {"url": "img/foo1.png", "text": "这是一个美女", "name": "Lucy"},
-        {"url": "img/foo2.jpg", "text": "这是一个美女", "name": "Tony"},
-        {"url": "img/foo3.jpg", "text": "这是一个美女", "name": "Honey"},
-        {"url": "img/foo5.jpg", "text": "这是一个美女", "name": "Jerry"}
+        {"url": "img/foo4.jpg", "text": "这是一个美女，啊哈哈", "name": "Jimmy", "title": "中北明夷1", "target": "http://baidu.com"},
+        {"url": "img/foo1.png", "text": "这是一个美女，啊哈哈22", "name": "Lucy", "title": "中北明夷2", "target": "http://baidu.com"},
+        {"url": "img/foo2.jpg", "text": "这是一个美女，啊哈哈33", "name": "Tony", "title": "中北明夷3", "target": "http://baidu.com"},
+        {"url": "img/foo3.jpg", "text": "这是一个美女，啊哈哈44", "name": "Honey", "title": "中北明夷4", "target": "http://baidu.com"},
+        {"url": "img/foo5.jpg", "text": "这是一个美女，啊哈哈45，\n长一点，再长一点，再长一点", "name": "Jerry", "title": "中北明夷5", "target": "http://baidu.com"}
     ]
 }
 },{}],9:[function(require,module,exports){
@@ -1204,7 +1248,7 @@ initDashboard = function() {
   dashboard.init(canvas, world);
   dashboard.onActive = function(imgData) {
     background.change(imgData.data);
-    return cover.change(imgData.data);
+    return cover.change(imgData);
   };
   dashboard.next();
   return background.changeFront(dashboard.activeImageData.data);

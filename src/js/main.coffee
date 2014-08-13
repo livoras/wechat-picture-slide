@@ -59,7 +59,7 @@ initDashboard = ->
     dashboard.init canvas, world
     dashboard.onActive = (imgData)->
         background.change imgData.data
-        cover.change imgData.data
+        cover.change imgData
     dashboard.next()
     background.changeFront dashboard.activeImageData.data
 
