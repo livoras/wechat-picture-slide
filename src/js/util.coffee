@@ -48,9 +48,28 @@ class Iterator
         @list[@index]
     current: ->
         @list[@index]
-    
+
+clip = (img, width, height, percentage)->
+    percentage = percentage or 0.8
+    iw = img.width
+    ih = img.height
+
+    if width / height > iw / ih
+        sw = iw * percentage
+        sh = sw * height / width
+    else
+        # height
+        sh = ih * percentage
+        sw = sh * width / height
+
+    sx = (iw - sw) / 2
+    sy = (ih - sh) / 2
+
+    {sx, sy, sw, sh}
+
+
 module.exports = {
-    $, Iterator, 
+    $, Iterator, clip,
     addClass, removeClass,
     setBackground, setRotate
 }

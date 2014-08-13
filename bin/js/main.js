@@ -594,9 +594,109 @@ window.addEventListener("load", function() {
 })
 
 },{}],3:[function(require,module,exports){
-var PACE, back, background, blur, callback, canvas, canvasBack, changeBack, changeFront, ctx, front, imgDataDrawer, isChange, param, renderFront;
+var GAP, HEIGHT, WIDTH, actions, canvas, ch, ctx, cw, cx, cy, initEvents, left, leftOrd, renderLeft, renderRight, right, rightOrd, slideData;
+
+slideData = require("./slide-data.coffee");
+
+canvas = null;
+
+ctx = null;
+
+left = new Image;
+
+left.src = "img/left.png";
+
+right = new Image;
+
+right.src = "img/right.png";
+
+cy = slideData.coverY;
+
+cx = slideData.coverX;
+
+ch = slideData.coverHeight;
+
+cw = slideData.coverWidth;
+
+GAP = 25;
+
+WIDTH = 23;
+
+HEIGHT = 60;
+
+actions = {};
+
+leftOrd = {
+  x: cx - WIDTH - GAP,
+  y: cy + (ch - HEIGHT) / 2
+};
+
+rightOrd = {
+  x: cx + cw + GAP,
+  y: cy + (ch - HEIGHT) / 2
+};
+
+actions.init = function(csv) {
+  canvas = csv;
+  ctx = canvas.getContext("2d");
+  return initEvents();
+};
+
+actions.move = function() {
+  renderLeft();
+  return renderRight();
+};
+
+renderRight = function() {
+  var x, y;
+  x = cx + cw + GAP;
+  y = cy + (ch - HEIGHT) / 2;
+  ctx.save();
+  ctx.drawImage(right, rightOrd.x, rightOrd.y, WIDTH, HEIGHT);
+  return ctx.restore();
+};
+
+renderLeft = function() {
+  var x, y;
+  x = cx - WIDTH - GAP;
+  y = cy + (ch - HEIGHT) / 2;
+  ctx.save();
+  ctx.drawImage(left, leftOrd.x, leftOrd.y, WIDTH, HEIGHT);
+  return ctx.restore();
+};
+
+initEvents = function() {
+  return window.addEventListener("touchstart", function(event) {
+    var touch, x, y;
+    event.preventDefault();
+    touch = event.touches[0];
+    x = touch.pageX;
+    y = touch.pageY;
+    if (x > leftOrd.x && x < leftOrd.x + WIDTH && y > leftOrd.y && y < leftOrd.y + HEIGHT) {
+      actions.actionLeft();
+    }
+    if (x > rightOrd.x && x < rightOrd.x + WIDTH && y > rightOrd.y && y < rightOrd.y + HEIGHT) {
+      return actions.actionRight();
+    }
+  });
+};
+
+actions.actionRight = function() {};
+
+actions.actionLeft = function() {};
+
+module.exports = actions;
+
+
+
+},{"./slide-data.coffee":10}],4:[function(require,module,exports){
+var PACE, back, background, blur, callback, canvas, canvasBack, changeBack, changeFront, clip, ctx, front, getRenderData, imgDataDrawer, isChange, param, renderFront, slideData, util;
 
 blur = require("./blur.coffee");
+
+util = require("./util.coffee");
+
+slideData = require("./slide-data.coffee");
 
 background = {};
 
@@ -606,19 +706,19 @@ ctx = null;
 
 canvas = null;
 
-front = new Image;
-
-front.src = "img/bg.png";
+front = null;
 
 back = null;
 
 param = 0;
 
-PACE = 0.01;
-
 isChange = false;
 
 canvasBack = null;
+
+PACE = slideData.OPACITY_PACE;
+
+clip = util.clip;
 
 callback = function() {};
 
@@ -640,6 +740,9 @@ background.move = function() {
 };
 
 renderFront = function() {
+  if (!front) {
+    return;
+  }
   ctx.save();
   ctx.globalAlpha = 1;
   if (front.imgData) {
@@ -649,6 +752,9 @@ renderFront = function() {
 };
 
 changeFront = function() {
+  if (!front) {
+    return;
+  }
   ctx.save();
   ctx.globalAlpha = 1 - param;
   ctx.drawImage(front.imgData, 0, 0);
@@ -656,6 +762,9 @@ changeFront = function() {
 };
 
 changeBack = function() {
+  if (!back) {
+    return;
+  }
   ctx.save();
   ctx.globalAlpha = param;
   ctx.drawImage(back.imgData, 0, 0);
@@ -670,30 +779,36 @@ background.init = function(cvs, cvsb) {
 };
 
 background.change = function(img, cb) {
-  var imgData, newImg;
-  if (!img.imgData) {
-    imgDataDrawer.drawImage(img, 0, 0);
-    imgData = imgDataDrawer.getImageData(0, 0, canvas.width, canvas.height);
-    blur(imgData);
-    imgDataDrawer.putImageData(imgData, 0, 0);
-    newImg = new Image;
-    newImg.src = canvasBack.toDataURL();
-    img.imgData = newImg;
-  }
+  img.imgData = getRenderData(img);
   isChange = true;
   back = img;
   return callback = cb;
 };
 
-setTimeout(function() {
-  return background.change(front);
-}, 100);
+background.changeFront = function(img) {
+  front = img;
+  return img.imgData = getRenderData(img);
+};
+
+getRenderData = function(img) {
+  var h, imgData, newImg, sx, sy, w, _ref;
+  w = canvas.width;
+  h = canvas.height;
+  _ref = clip(img, w, h), sx = _ref.sx, sy = _ref.sy;
+  imgDataDrawer.drawImage(img, sx, sy, w, h, 0, 0, w, h);
+  imgData = imgDataDrawer.getImageData(0, 0, w, h);
+  blur(imgData);
+  imgDataDrawer.putImageData(imgData, 0, 0);
+  newImg = new Image;
+  newImg.src = canvasBack.toDataURL();
+  return newImg;
+};
 
 module.exports = background;
 
 
 
-},{"./blur.coffee":4}],4:[function(require,module,exports){
+},{"./blur.coffee":5,"./slide-data.coffee":10,"./util.coffee":12}],5:[function(require,module,exports){
 var gBlur;
 
 gBlur = require("../../lib/blur");
@@ -704,7 +819,290 @@ module.exports = function(img) {
 
 
 
-},{"../../lib/blur":1}],5:[function(require,module,exports){
+},{"../../lib/blur":1}],6:[function(require,module,exports){
+var PACE, canvas, clip, cover, ctx, currentImg, draw, drawCurrentImage, height, isChange, nextImg, opacity, renderCurrentImage, renderNextImage, slideData, util, width, x, y;
+
+cover = {};
+
+canvas = null;
+
+ctx = null;
+
+currentImg = nextImg = null;
+
+slideData = require("./slide-data.coffee");
+
+PACE = slideData.OPACITY_PACE;
+
+opacity = 0;
+
+isChange = false;
+
+util = require("./util.coffee");
+
+clip = util.clip;
+
+x = y = width = height = 0;
+
+cover.change = function(img) {
+  nextImg = img;
+  opacity = 0;
+  return isChange = true;
+};
+
+cover.move = function() {
+  if (isChange) {
+    opacity += PACE;
+    renderCurrentImage();
+    renderNextImage();
+    if (opacity >= 1) {
+      isChange = false;
+      opacity = 0;
+      return currentImg = nextImg;
+    }
+  } else {
+    return drawCurrentImage();
+  }
+};
+
+renderNextImage = function() {
+  if (!currentImg) {
+    return;
+  }
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  draw(nextImg);
+  return ctx.restore();
+};
+
+renderCurrentImage = function() {
+  if (!currentImg) {
+    return;
+  }
+  ctx.save();
+  ctx.globalAlpha = 1 - opacity;
+  draw(currentImg);
+  return ctx.restore();
+};
+
+drawCurrentImage = function() {
+  if (!currentImg || isChange) {
+    return;
+  }
+  ctx.save();
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 3;
+  ctx.shadowColor = "#000";
+  draw(currentImg);
+  return ctx.restore();
+};
+
+draw = function(img) {
+  var sh, sw, sx, sy, _ref;
+  ctx.translate(x, y);
+  _ref = clip(img, width, height), sx = _ref.sx, sy = _ref.sy, sw = _ref.sw, sh = _ref.sh;
+  return ctx.drawImage(img, sx, sy, sw, sh, 0, 0, width, height);
+};
+
+cover.init = function(cvs) {
+  canvas = cvs;
+  ctx = canvas.getContext("2d");
+  width = slideData.coverWidth;
+  height = slideData.coverHeight;
+  x = slideData.coverX;
+  return y = slideData.coverY;
+};
+
+module.exports = cover;
+
+
+
+},{"./slide-data.coffee":10,"./util.coffee":12}],7:[function(require,module,exports){
+var $, Iterator, Thumb, active, addClass, currentActive, dashboard, data, deactive, degs, headIter, images, iniSlideAction, isSliding, makeSlideShow, next, originX, originY, prev, processSlide, removeClass, resetRotate, setBackground, setRotate, slideBackward, slideData, slideForward, tailIter, thumbs, util, visibleImgsCount, world;
+
+data = require("./data.json");
+
+images = data.images;
+
+slideData = require("./slide-data.coffee");
+
+util = require("./util.coffee");
+
+Thumb = require("./thumb.coffee");
+
+thumbs = [];
+
+headIter = null;
+
+tailIter = null;
+
+world = null;
+
+isSliding = false;
+
+currentActive = null;
+
+$ = util.$, Iterator = util.Iterator, addClass = util.addClass, removeClass = util.removeClass, setBackground = util.setBackground, setRotate = util.setRotate;
+
+originX = slideData.originX, originY = slideData.originY, degs = slideData.degs, visibleImgsCount = slideData.visibleImgsCount;
+
+dashboard = {};
+
+dashboard.init = function(canvas, w) {
+  Thumb.init(canvas);
+  world = w;
+  makeSlideShow();
+  return iniSlideAction();
+};
+
+dashboard.next = next = function() {
+  if (isSliding) {
+    return;
+  }
+  return slideForward();
+};
+
+dashboard.prev = prev = function() {
+  if (isSliding) {
+    return;
+  }
+  return slideBackward();
+};
+
+makeSlideShow = function() {
+  var deg, i, img, imgIter, index, thumb, _i, _len;
+  imgIter = new util.Iterator(images, true);
+  headIter = new util.Iterator(images, true);
+  for (i = _i = 0, _len = degs.length; _i < _len; i = ++_i) {
+    deg = degs[i];
+    img = imgIter.current();
+    index = imgIter.index;
+    imgIter.next();
+    thumb = new Thumb(originX, originY, deg, img);
+    thumb.imgIndex = index;
+    thumbs.push(thumb);
+    world.add(thumb);
+  }
+  currentActive = thumbs[(visibleImgsCount - 1) / 2];
+  tailIter = imgIter;
+  return tailIter.prev();
+};
+
+slideForward = function() {
+  var activeImageData, imgData, nextImgIndex, thumb;
+  isSliding = true;
+  deactive(currentActive);
+  thumb = thumbs.shift();
+  headIter.next();
+  imgData = tailIter.next();
+  thumbs.push(thumb);
+  processSlide(thumb, imgData);
+  currentActive = thumbs[(visibleImgsCount - 1) / 2];
+  active(currentActive);
+  nextImgIndex = currentActive.imgIndex;
+  activeImageData = images[nextImgIndex];
+  dashboard.activeImageData = activeImageData;
+  return dashboard.onActive(activeImageData);
+};
+
+slideBackward = function() {
+  var activeImageData, imgData, nextImgIndex, thumb;
+  isSliding = true;
+  deactive(currentActive);
+  thumb = thumbs.pop();
+  tailIter.prev();
+  imgData = headIter.prev();
+  thumbs.unshift(thumb);
+  processSlide(thumb, imgData);
+  currentActive = thumbs[(visibleImgsCount - 1) / 2];
+  active(currentActive);
+  nextImgIndex = currentActive.imgIndex;
+  activeImageData = images[nextImgIndex];
+  dashboard.activeImageData = activeImageData;
+  return dashboard.onActive(activeImageData);
+};
+
+processSlide = function(thumb) {
+  thumb.isAnima = false;
+  return resetRotate(function() {
+    isSliding = false;
+    return thumb.isAnima = true;
+  });
+};
+
+resetRotate = function(callback) {
+  var cb, count, i, thumb, _i, _len, _results;
+  count = 0;
+  cb = function() {
+    count++;
+    if (count === thumbs.length - 1) {
+      return callback();
+    }
+  };
+  _results = [];
+  for (i = _i = 0, _len = thumbs.length; _i < _len; i = ++_i) {
+    thumb = thumbs[i];
+    _results.push(thumb.change(degs[i], cb));
+  }
+  return _results;
+};
+
+deactive = function(thumb) {
+  return thumb.deactive();
+};
+
+active = function(thumb) {
+  return thumb.active();
+};
+
+iniSlideAction = function() {
+  var THRESHOLD, currentPageX, isActive, originPageX;
+  currentPageX = originPageX = 0;
+  THRESHOLD = 50;
+  isActive = false;
+  window.addEventListener("touchstart", function(event) {
+    var touch;
+    event.preventDefault();
+    touch = event.touches[0];
+    if (touch.pageY >= canvas.height - slideData.DASHBOARD_HEIGHT) {
+      isActive = true;
+    } else {
+      isActive = false;
+    }
+    return currentPageX = originPageX = touch.pageX;
+  });
+  window.addEventListener("touchmove", function(event) {
+    var touch;
+    if (!isActive) {
+      return;
+    }
+    event.preventDefault();
+    touch = event.touches[0];
+    return currentPageX = touch.pageX;
+  });
+  return window.addEventListener("touchend", function(event) {
+    if (!isActive) {
+      return;
+    }
+    event.preventDefault();
+    if (currentPageX > originPageX && currentPageX - originPageX > THRESHOLD) {
+      return prev();
+    } else if (originPageX > currentPageX && originPageX - currentPageX > THRESHOLD) {
+      return next();
+    }
+  });
+};
+
+dashboard.onActive = function(img) {
+  return console.log("TOBE IMPLEMENTED.");
+};
+
+module.exports = dashboard;
+
+
+
+},{"./data.json":8,"./slide-data.coffee":10,"./thumb.coffee":11,"./util.coffee":12}],8:[function(require,module,exports){
 module.exports={
     "images": [
         {"url": "img/foo4.jpg", "text": "这是一个美女", "name": "Jimmy"},
@@ -714,8 +1112,8 @@ module.exports={
         {"url": "img/foo5.jpg", "text": "这是一个美女", "name": "Jerry"}
     ]
 }
-},{}],6:[function(require,module,exports){
-var $, Iterator, Thumb, addClass, background, canvas, canvasBack, ctx, data, images, init, initBackground, initImages, removeClass, resizeCanvas, setBackground, setRotate, slideData, util, world;
+},{}],9:[function(require,module,exports){
+var $, Iterator, actions, addClass, background, canvas, canvasBack, cover, ctx, dashboard, data, images, init, initActions, initBackground, initCover, initDashboard, initImages, removeClass, resizeCanvas, setBackground, setRotate, util, world;
 
 data = require("./data.json");
 
@@ -723,15 +1121,15 @@ util = require("./util.coffee");
 
 world = require("./world.coffee");
 
+cover = require("./cover.coffee");
+
 background = require("./background.coffee");
 
 images = data.images;
 
-slideData = require("./slide-data.coffee");
+dashboard = require("./dashboard.coffee");
 
-Thumb = require("./thumb.coffee");
-
-console.log(slideData);
+actions = require("./actions.coffee");
 
 $ = util.$, Iterator = util.Iterator, addClass = util.addClass, removeClass = util.removeClass, setBackground = util.setBackground, setRotate = util.setRotate;
 
@@ -750,9 +1148,13 @@ resizeCanvas = function() {
 
 init = function() {
   resizeCanvas();
-  initImages();
-  initBackground();
-  return world.start();
+  return initImages(function() {
+    initBackground();
+    initDashboard();
+    initCover();
+    initActions();
+    return world.start();
+  });
 };
 
 initBackground = function() {
@@ -760,32 +1162,72 @@ initBackground = function() {
   return world.add(background);
 };
 
-initImages = function() {
-  var img, _i, _len, _results;
+initCover = function() {
+  cover.init(canvas);
+  return world.add(cover);
+};
+
+initActions = function() {
+  actions.actionLeft = function() {
+    return dashboard.prev();
+  };
+  actions.actionRight = function() {
+    return dashboard.next();
+  };
+  actions.init(canvas);
+  return world.add(actions);
+};
+
+initImages = function(callback) {
+  var check, count, i, img, _i, _len, _results;
+  count = 0;
+  check = function() {
+    count++;
+    if (count === images.length) {
+      return callback();
+    }
+  };
   _results = [];
-  for (_i = 0, _len = images.length; _i < _len; _i++) {
-    img = images[_i];
+  for (i = _i = 0, _len = images.length; _i < _len; i = ++_i) {
+    img = images[i];
     data = new Image;
-    data.src = img.url;
-    _results.push(img.data = data);
+    data.addEventListener("load", function() {
+      return check();
+    });
+    img.data = data;
+    _results.push(data.src = img.url);
   }
   return _results;
+};
+
+initDashboard = function() {
+  dashboard.init(canvas, world);
+  dashboard.onActive = function(imgData) {
+    background.change(imgData.data);
+    return cover.change(imgData.data);
+  };
+  dashboard.next();
+  return background.changeFront(dashboard.activeImageData.data);
 };
 
 init();
 
 
 
-},{"./background.coffee":3,"./data.json":5,"./slide-data.coffee":7,"./thumb.coffee":8,"./util.coffee":9,"./world.coffee":10}],7:[function(require,module,exports){
-var DASHBOARD_HEIGHT, DASHBOARD_WIDTH, THUMB_HEIGHT, THUMB_WIDTH, init, piToDeg;
+},{"./actions.coffee":3,"./background.coffee":4,"./cover.coffee":6,"./dashboard.coffee":7,"./data.json":8,"./util.coffee":12,"./world.coffee":13}],10:[function(require,module,exports){
+var DASHBOARD_HEIGHT, DASHBOARD_WIDTH, THUMB_HEIGHT, THUMB_WIDTH, canvasHeight, canvasWidth, init, piToDeg;
 
-THUMB_HEIGHT = 100;
+THUMB_HEIGHT = 96;
 
 THUMB_WIDTH = 65;
 
-DASHBOARD_WIDTH = window.outerWidth;
+canvasHeight = window.outerHeight;
 
-DASHBOARD_HEIGHT = 180;
+canvasWidth = window.outerWidth;
+
+DASHBOARD_WIDTH = canvasWidth;
+
+DASHBOARD_HEIGHT = 175;
 
 init = function() {
   var half, i, imgLoops, l, perDeg, perPI, r, radius, rh, rw, totalDeg, totalPI, visibleImgsCount, w, _i;
@@ -814,7 +1256,17 @@ init = function() {
   exports.perDeg = perDeg;
   exports.visibleImgsCount = visibleImgsCount;
   exports.originX = DASHBOARD_WIDTH / 2;
-  return exports.originY = window.outerHeight + radius - DASHBOARD_HEIGHT;
+  exports.originY = canvasHeight + radius - DASHBOARD_HEIGHT + THUMB_HEIGHT;
+  exports.radius = radius;
+  exports.THUMB_WIDTH = THUMB_WIDTH;
+  exports.THUMB_HEIGHT = THUMB_HEIGHT;
+  exports.DASHBOARD_HEIGHT = DASHBOARD_HEIGHT;
+  exports.DASHBOARD_WIDTH = DASHBOARD_WIDTH;
+  exports.OPACITY_PACE = 0.05;
+  exports.coverWidth = canvasWidth * 0.6;
+  exports.coverHeight = canvasHeight * 0.53;
+  exports.coverX = (canvasWidth - exports.coverWidth) / 2;
+  return exports.coverY = canvasHeight - DASHBOARD_HEIGHT - exports.coverHeight - 25;
 };
 
 piToDeg = function(pi) {
@@ -825,25 +1277,103 @@ init();
 
 
 
-},{}],8:[function(require,module,exports){
-var Thumb;
+},{}],11:[function(require,module,exports){
+var Thumb, canvas, clip, ctx, radius, slideData, util;
+
+slideData = require("./slide-data.coffee");
+
+util = require("./util.coffee");
+
+ctx = null;
+
+canvas = null;
+
+radius = slideData.radius;
+
+clip = util.clip;
 
 Thumb = (function() {
-  function Thumb(originX, originY, angle) {
+  function Thumb(originX, originY, angle, img) {
     this.originX = originX;
     this.originY = originY;
     this.angle = angle;
-    console.log('fuck');
+    this.img = img;
+    this.targetAngle = this.angle;
+    this.width = slideData.THUMB_WIDTH;
+    this.height = slideData.THUMB_HEIGHT;
+    this.isAnima = true;
   }
+
+  Thumb.prototype.move = function() {
+    var sh, sw, sx, sy, _ref;
+    this.updateAngle();
+    ctx.save();
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 1;
+    ctx.shadowColor = "#555";
+    ctx.translate(this.originX, this.originY);
+    ctx.rotate(this.angle / 180 * Math.PI);
+    _ref = clip(this.img.data, this.width, this.height), sx = _ref.sx, sy = _ref.sy, sw = _ref.sw, sh = _ref.sh;
+    ctx.drawImage(this.img.data, sx, sy, sw, sh, -this.width / 2, -(radius + this.height), this.width, this.height);
+    if (this.isActive) {
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(-this.width / 2, -(radius + this.height), this.width, this.height);
+    }
+    return ctx.restore();
+  };
+
+  Thumb.prototype.change = function(angle, callback) {
+    if (this.isAnima) {
+      return this.animChange(angle, callback);
+    } else {
+      return this.angle = this.targetAngle = angle;
+    }
+  };
+
+  Thumb.prototype.animChange = function(angle, callback) {
+    this.isAnima = true;
+    this.targetAngle = angle;
+    this.pace = (angle - this.angle) / 20;
+    return this.callback = callback;
+  };
+
+  Thumb.prototype.updateAngle = function() {
+    if (this.angle === this.targetAngle) {
+      return;
+    }
+    if (Math.abs(this.targetAngle - this.angle) < 0.5) {
+      this.angle = this.targetAngle;
+      return typeof this.callback === "function" ? this.callback() : void 0;
+    } else {
+      return this.angle += this.pace;
+    }
+  };
+
+  Thumb.prototype.active = function() {
+    return this.isActive = true;
+  };
+
+  Thumb.prototype.deactive = function() {
+    return this.isActive = false;
+  };
 
   return Thumb;
 
 })();
 
+Thumb.init = function(cvs) {
+  canvas = cvs;
+  return ctx = canvas.getContext("2d");
+};
+
+module.exports = Thumb;
 
 
-},{}],9:[function(require,module,exports){
-var $, Iterator, addClass, removeClass, setBackground, setRotate,
+
+},{"./slide-data.coffee":10,"./util.coffee":12}],12:[function(require,module,exports){
+var $, Iterator, addClass, clip, removeClass, setBackground, setRotate,
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 $ = function(selector) {
@@ -936,9 +1466,32 @@ Iterator = (function() {
 
 })();
 
+clip = function(img, width, height, percentage) {
+  var ih, iw, sh, sw, sx, sy;
+  percentage = percentage || 0.8;
+  iw = img.width;
+  ih = img.height;
+  if (width / height > iw / ih) {
+    sw = iw * percentage;
+    sh = sw * height / width;
+  } else {
+    sh = ih * percentage;
+    sw = sh * width / height;
+  }
+  sx = (iw - sw) / 2;
+  sy = (ih - sh) / 2;
+  return {
+    sx: sx,
+    sy: sy,
+    sw: sw,
+    sh: sh
+  };
+};
+
 module.exports = {
   $: $,
   Iterator: Iterator,
+  clip: clip,
   addClass: addClass,
   removeClass: removeClass,
   setBackground: setBackground,
@@ -947,7 +1500,7 @@ module.exports = {
 
 
 
-},{}],10:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var spirts, timer, world;
 
 require("../../lib/init");
@@ -979,4 +1532,4 @@ module.exports = world;
 
 
 
-},{"../../lib/init":2}]},{},[6]);
+},{"../../lib/init":2}]},{},[9]);
