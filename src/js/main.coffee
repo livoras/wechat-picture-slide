@@ -17,7 +17,7 @@ buttons = []
 
 pageX = 0
 pageY = 0
-
+startTime = 0
 
 init = ->
     resizeCanvas()
@@ -42,6 +42,7 @@ initClear = ->
 
 initEvents = ->
     canvas.addEventListener "touchstart", (event)->
+        startTime = +new Date
         event.preventDefault()
         touch = event.touches[0]
         pageX = touch.pageX
@@ -125,6 +126,7 @@ class Button
 
     initEvents: ->
         canvas.addEventListener "touchend", (event)=>
+            if +new Date - startTime > 500 then return
             piDeg = @deg / 180 * Math.PI
             originX = (Math.sin piDeg) * RADIUS + 0.5 * canvasWidth
             originY = -(Math.cos piDeg) * RADIUS + 0.5 * canvasHeight
