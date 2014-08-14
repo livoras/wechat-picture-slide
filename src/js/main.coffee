@@ -125,14 +125,26 @@ class Button
                 @v += @force
 
     initEvents: ->
-        canvas.addEventListener "touchend", (event)=>
-            if +new Date - startTime > 500 then return
+        canvas.addEventListener "touchstart", (event)=>
             piDeg = @deg / 180 * Math.PI
             originX = (Math.sin piDeg) * RADIUS + 0.5 * canvasWidth
             originY = -(Math.cos piDeg) * RADIUS + 0.5 * canvasHeight
             x = originX - 0.5 * BUTTON_SIZE
             y = originY - 0.5 * BUTTON_SIZE
             if x < pageX < x + BUTTON_SIZE and y < pageY < y + BUTTON_SIZE
-                window.location.href = @target
+                @startIn = yes
+            else
+                @startIn = no
+
+
+        canvas.addEventListener "touchend", (event)=>
+            if +new Date - startTime > 200 then return
+            piDeg = @deg / 180 * Math.PI
+            originX = (Math.sin piDeg) * RADIUS + 0.5 * canvasWidth
+            originY = -(Math.cos piDeg) * RADIUS + 0.5 * canvasHeight
+            x = originX - 0.5 * BUTTON_SIZE
+            y = originY - 0.5 * BUTTON_SIZE
+            if x < pageX < x + BUTTON_SIZE and y < pageY < y + BUTTON_SIZE
+                if @startIn then window.location.href = @target
 
 init()
